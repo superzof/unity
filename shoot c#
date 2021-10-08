@@ -1,0 +1,84 @@
+using UnityEngine;
+
+public class GunSystem : MonoBehaviour
+{
+    //gun stats
+    public int damage;
+    public float timeBetweenShoothing, spread, range, reloadTime, timeBetweenShots;
+    public int magasineSize, bulletsPerTap;
+    public bool allowButtonHold;
+    int bulletLeft, bulletShot;
+    //bool
+    bool shoothing, ReadyToShoot, reloading;
+
+    //reference
+    public Camera fpsCam;
+    public Transform attackPoint;
+    public RaycastHit raycastHit;
+    public LayerMask wahtIsEnemy;
+
+    private void Awake()
+    {
+        bulletLeft = magasineSize;
+        ReadyToShoot = true;
+    }
+
+    private void Update()
+    {
+        MyInput();
+    }
+    private void MyInput()
+    {
+        if (allowButtonHold) shoothing = OVRInput.GetKey(OVRInput.Axis1D.PrimaryHandTrigger);
+        else shoothing = OVRInput.GetKeyDown(OVRInput.Axis1D.PrimaryHandTrigger);
+
+        if (OVRInput.GetKeyDown(OVRIinput.Button.One) && bulletsLeft < magasineSize && !reloading) reloading();
+
+        if (ReadyToShoot && shoothing && !reloading && bulletLeft > 0){
+            bulletShot = bulletsPerTap;
+            shoot();
+        }
+
+    }
+    private void shoot()
+    {
+        ReadyToShoot = false;
+        //spread
+        float x = Random.Range(-spread, spread);
+        float y = Random.Range(-spread, spread);
+        //calculate direction with spread
+        Vector3 direction = fpsCam.transform.foward + new Vector3(x,y, 0 );
+
+        //raycast
+        if (Physics.Raycast(fpsCam.Transform.position, direction, out rayHit, range, wahtIsEnemy))
+        {
+            Dubug.Log(rayHit.collider.name);
+            if (rayHit.collider.CompareTag("enemy"))
+                rayHit.collider.GetComponent<ShoothingAI>().TakeDamage(damage);
+        }
+
+        bulletLeft--;
+        Invoke("ResetShot", timeBetweenShoothing);
+
+        //auto gun
+
+        if(bulletShot > 0 && bulletLeft > 0)
+        Invoke ("Shoot", timeBetweenShoothing);
+
+    }
+    private void ResetShot()
+    {
+        ReadyToShoot = true;
+    }
+    private void reload()
+    {
+        reloading = true;
+        Invoke("ReloadFinished", reloadTime);
+    }
+    private void ReloadFinished()
+    {
+        bulletLeft = magasineSize;
+        reloading = false;
+    }
+
+}
